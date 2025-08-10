@@ -67,6 +67,14 @@ public class StockServiceTest {
   @Test
   void getPopularStocks_returnsTopThree() {
     when(mockPriceGenerator.generateNextPrice(anyString(), anyLong())).thenReturn(1000L);
+    when(mockClock.instant())
+        .thenReturn(
+            Instant.ofEpochSecond(1000),
+            Instant.ofEpochSecond(2000),
+            Instant.ofEpochSecond(3000),
+            Instant.ofEpochSecond(4000),
+            Instant.ofEpochSecond(5000),
+            Instant.ofEpochSecond(6000));
     stockService.getPrice("stock-5");
     stockService.getPrice("stock-5");
     stockService.getPrice("stock-5");

@@ -14,7 +14,7 @@ public class PriceGeneratorTest {
 
   @Mock Random mockRandom;
 
-  @InjectMocks PriceGenerator priceGenerator;
+  @InjectMocks PriceGeneratorImpl priceGenerator;
 
   @BeforeEach
   void methodSetUp() {
