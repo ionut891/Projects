@@ -24,11 +24,9 @@ public class StockControllerTest {
 
   @Test
   void getStock_whenTickerExists_returnsStockSnapshot() throws Exception {
-    // Arrange
+
     StockSnapshot snapshot = new StockSnapshot("stock-1", 1010L);
     given(stockService.getPrice("stock-1")).willReturn(snapshot);
-
-    // Act & Assert
     mockMvc
         .perform(get("/stocks/stock-1"))
         .andExpect(status().isOk())
@@ -38,20 +36,14 @@ public class StockControllerTest {
 
   @Test
   void getStock_whenTickerDoesNotExist_returnsNotFound() throws Exception {
-    // Arrange
     given(stockService.getPrice("unknown-stock")).willThrow(new NoSuchElementException());
-
-    // Act & Assert
     mockMvc.perform(get("/stocks/unknown-stock")).andExpect(status().isNotFound());
   }
 
   @Test
   void popularStocks_returnsListOfStrings() throws Exception {
-    // Arrange
     List<String> popular = List.of("stock-5", "stock-2", "stock-8");
     given(stockService.getTopPopular(3)).willReturn(popular);
-
-    // Act & Assert
     mockMvc
         .perform(get("/popular-stocks"))
         .andExpect(status().isOk())
@@ -62,11 +54,8 @@ public class StockControllerTest {
 
   @Test
   void sumStocks_returnsSumInMap() throws Exception {
-    // Arrange
     long totalSum = 10500L;
     given(stockService.getSumOfAllStocksSameSecond()).willReturn(totalSum);
-
-    // Act & Assert
     mockMvc
         .perform(get("/sum-stocks"))
         .andExpect(status().isOk())

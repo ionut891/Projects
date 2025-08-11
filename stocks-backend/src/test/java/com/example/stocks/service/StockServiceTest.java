@@ -202,37 +202,29 @@ public class StockServiceTest {
 
   @Test
   void getSumOfAllStocksSameSecond_withMixedCache_calculatesOnlyStaleStocks() {
-    // "Warm up" the cache for two stocks by calling getPrice. This updates their state.
     when(mockPriceGenerator.generateNextPrice("stock-1", 1000L)).thenReturn(1010L);
     when(mockPriceGenerator.generateNextPrice("stock-2", 1000L)).thenReturn(1020L);
     stockService.getPrice("stock-1");
     stockService.getPrice("stock-2");
 
-    // Reset the mock to count invocations for the actual test
     reset(mockPriceGenerator);
 
-    // Configure the mock for the remaining 8 stocks
     when(mockPriceGenerator.generateNextPrice(anyString(), anyLong())).thenReturn(1100L);
 
-    // --- Act ---
     long sum = stockService.getSumOfAllStocksSameSecond();
 
-    // --- Assert ---
-    // Expected sum is 2 cached values + 8 newly calculated values
     long expectedSum = 1010L + 1020L + (8 * 1100L);
     assertEquals(expectedSum, sum);
 
-    // CRITICAL: Verify the expensive method was only called for the 8 stale stocks
     verify(
             mockPriceGenerator,
             times(8).description("Should only call price generator for the 8 stale stocks"))
         .generateNextPrice(anyString(), anyLong());
   }
 
-  /** ADDED: Tests that the sum method completes quickly by running calculations in parallel. */
   @Test
   void getSumOfAllStocksSameSecond_runsInParallel_completesWithinTimeout() {
-    // Configure the mock to have a consistent 200ms delay for every stock
+
     when(mockPriceGenerator.generateNextPrice(anyString(), anyLong()))
         .thenAnswer(
             (Answer<Long>)
@@ -241,7 +233,6 @@ public class StockServiceTest {
                   return 1000L;
                 });
 
-    // If sequential, 10 * 200ms = 2000ms. We assert it finishes in under 1 second.
     assertTimeout(
         Duration.ofSeconds(1),
         () -> {
@@ -252,11 +243,9 @@ public class StockServiceTest {
 
   @Test
   void getPriceAndSum_concurrentRequests_maintainsConsistencyAndCorrectness() throws Exception {
-    // --- Setup ---
     long newPriceForStock1 = 1010L;
     long newPriceForOtherStocks = 1100L;
 
-    // Configure the mock to be slow for stock-1
     when(mockPriceGenerator.generateNextPrice("stock-1", 1000L))
         .thenAnswer(
             (Answer<Long>)
@@ -264,33 +253,29 @@ public class StockServiceTest {
                   Thread.sleep(200);
                   return newPriceForStock1;
                 });
-    // And fast for all other stocks
+
     when(mockPriceGenerator.generateNextPrice(not(eq("stock-1")), anyLong()))
         .thenReturn(newPriceForOtherStocks);
 
     ExecutorService executor = Executors.newFixedThreadPool(2);
 
-    // Submit both calls at the same time
     Future<StockSnapshot> getPriceFuture = executor.submit(() -> stockService.getPrice("stock-1"));
     Future<Long> getSumFuture = executor.submit(() -> stockService.getSumOfAllStocksSameSecond());
 
     StockSnapshot priceResult = getPriceFuture.get(1, TimeUnit.SECONDS);
     long sumResult = getSumFuture.get(1, TimeUnit.SECONDS);
 
-    // 1. Both methods should get the same, single calculated price for stock-1
     assertEquals(newPriceForStock1, priceResult.price());
 
     long expectedSum = newPriceForStock1 + (9 * newPriceForOtherStocks);
     assertEquals(expectedSum, sumResult);
 
-    // 2. The expensive price generator was only called ONCE for stock-1
     verify(
             mockPriceGenerator,
             times(1)
                 .description("Price generator should only be called once for the contested stock"))
         .generateNextPrice("stock-1", 1000L);
 
-    // 3. Popularity for stock-1 was only incremented once (by the getPrice call)
     assertEquals(1, stockService.getStockStates().get("stock-1").popularity());
     assertEquals(0, stockService.getStockStates().get("stock-2").popularity());
   }
