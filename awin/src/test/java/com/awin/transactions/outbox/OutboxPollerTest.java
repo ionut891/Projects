@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.awin.transactions.support.RecordingMessagePublisher;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,7 +63,7 @@ class OutboxPollerTest {
     @Test
     void leavesEventUnpublishedAndIncrementsAttemptsOnFailure() {
         OutboxEvent event = repository.save(new OutboxEvent(
-                UUID.randomUUID(), "TransactionApproved", "{}", Instant.now()));
+                UUID.randomUUID(), "TransactionApproved", "{}", clock.instant()));
         recording.failNext(new RuntimeException("broker down"));
 
         poller.drain();

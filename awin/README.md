@@ -57,8 +57,8 @@ Response (`201 Created`):
   "saleAmount": 100.00,
   "commissionAmount": 10.00,
   "parts": [
-    {"id": "...", "saleAmount": 60.00, "commissionAmount": 6.00},
-    {"id": "...", "saleAmount": 40.00, "commissionAmount": 4.00}
+    {"id": "...", "transactionId": "1436105c-053b-4631-aeac-fb4d8bb27354", "saleAmount": 60.00, "commissionAmount": 6.00},
+    {"id": "...", "transactionId": "1436105c-053b-4631-aeac-fb4d8bb27354", "saleAmount": 40.00, "commissionAmount": 4.00}
   ]
 }
 ```

@@ -2,7 +2,7 @@ package com.awin.transactions.api;
 
 import com.awin.transactions.domain.IllegalStateTransitionException;
 import com.awin.transactions.service.AmountValidationException;
-import com.awin.transactions.service.ConcurrentModificationException;
+import com.awin.transactions.service.ConcurrentTransactionUpdateException;
 import com.awin.transactions.service.TransactionNotFoundException;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
@@ -38,8 +38,8 @@ public class GlobalExceptionHandler {
         return pd;
     }
 
-    @ExceptionHandler(ConcurrentModificationException.class)
-    public ProblemDetail handleConcurrent(ConcurrentModificationException ex) {
+    @ExceptionHandler(ConcurrentTransactionUpdateException.class)
+    public ProblemDetail handleConcurrent(ConcurrentTransactionUpdateException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 

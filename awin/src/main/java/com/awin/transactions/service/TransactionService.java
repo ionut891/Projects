@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Concurrency is handled optimistically: if two requests race to mutate the same transaction,
  * Hibernate detects the version mismatch on flush and the loser is reported to the caller as
- * {@link ConcurrentModificationException} (mapped to HTTP {@code 409}).
+ * {@link ConcurrentTransactionUpdateException} (mapped to HTTP {@code 409}).
  */
 @Service
 public class TransactionService {
@@ -84,7 +84,7 @@ public class TransactionService {
      * @throws TransactionNotFoundException        if no transaction exists with this id.
      * @throws com.awin.transactions.domain.IllegalStateTransitionException
      *                                             if the transaction is not in {@code PENDING}.
-     * @throws ConcurrentModificationException     if a concurrent request mutated the transaction
+     * @throws ConcurrentTransactionUpdateException     if a concurrent request mutated the transaction
      *                                             first.
      */
     @Transactional
@@ -103,7 +103,7 @@ public class TransactionService {
      * @throws TransactionNotFoundException        if no transaction exists with this id.
      * @throws com.awin.transactions.domain.IllegalStateTransitionException
      *                                             if the transaction is not in {@code PENDING}.
-     * @throws ConcurrentModificationException     if a concurrent request mutated the transaction
+     * @throws ConcurrentTransactionUpdateException     if a concurrent request mutated the transaction
      *                                             first.
      */
     @Transactional
@@ -137,7 +137,7 @@ public class TransactionService {
                     clock.instant()));
             return saved;
         } catch (OptimisticLockingFailureException | OptimisticLockException e) {
-            throw new ConcurrentModificationException(tx.getId());
+            throw new ConcurrentTransactionUpdateException(tx.getId());
         }
     }
 

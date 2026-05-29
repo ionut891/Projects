@@ -8,6 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.awin.transactions.outbox.MessagePublisher;
 import com.awin.transactions.support.RecordingMessagePublisher;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -19,7 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-@SpringBootTest
+@SpringBootTest(properties = "awin.outbox.poll-interval-ms=3600000")
 @AutoConfigureMockMvc
 class TransactionControllerTest {
 
@@ -34,6 +36,9 @@ class TransactionControllerTest {
 
     @Autowired
     MockMvc mvc;
+
+    @Autowired
+    ObjectMapper objectMapper;
 
     private static final String VALID_CREATE =
             """
@@ -159,8 +164,8 @@ class TransactionControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    private static String extractId(String body) {
-        int idx = body.indexOf("\"id\":\"") + 6;
-        return body.substring(idx, idx + 36);
+    private String extractId(String body) throws Exception {
+        JsonNode node = objectMapper.readTree(body);
+        return node.get("id").asText();
     }
 }

@@ -22,7 +22,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
-@SpringBootTest
+@SpringBootTest(properties = "awin.outbox.poll-interval-ms=3600000")
 class TransactionServiceConcurrencyTest {
 
     @TestConfiguration
@@ -64,7 +64,7 @@ class TransactionServiceConcurrencyTest {
                         start.await();
                         service.approve(id);
                         successes.incrementAndGet();
-                    } catch (ConcurrentModificationException | com.awin.transactions.domain.IllegalStateTransitionException e) {
+                    } catch (ConcurrentTransactionUpdateException | com.awin.transactions.domain.IllegalStateTransitionException e) {
                         conflicts.incrementAndGet();
                     } catch (Exception e) {
                         // Surface as failure

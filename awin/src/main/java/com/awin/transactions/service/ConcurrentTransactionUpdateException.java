@@ -7,8 +7,8 @@ import java.util.UUID;
  * another request mutated the same row concurrently. Mapped to HTTP {@code 409}; clients may
  * re-read state and decide whether to retry.
  */
-public class ConcurrentModificationException extends RuntimeException {
-    public ConcurrentModificationException(UUID id) {
+public class ConcurrentTransactionUpdateException extends RuntimeException {
+    public ConcurrentTransactionUpdateException(UUID id) {
         super("Transaction " + id + " was modified concurrently");
     }
 }
