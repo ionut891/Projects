@@ -5,21 +5,25 @@ A small Spring Boot REST API that manages `Transaction` records, each composed o
 ## Requirements
 
 - Java 21+ (tested with Amazon Corretto 23)
-- Maven 3.9+ (any recent version works)
+- No local Maven required — the project ships the Maven wrapper (`./mvnw`)
 
 ## Run
 
 ```bash
 export JAVA_HOME=$(/usr/libexec/java_home -v 21+)   # or any JDK 21+
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
-The app listens on `http://localhost:8080`. H2 console is available at `http://localhost:8080/h2-console` (JDBC URL `jdbc:h2:mem:awin`, user `sa`, no password).
+The app listens on `http://localhost:8080`. Useful endpoints:
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+- H2 console: `http://localhost:8080/h2-console` (JDBC URL `jdbc:h2:mem:awin`, user `sa`, no password)
 
 ## Run tests
 
 ```bash
-mvn test
+./mvnw test
 ```
 
 ## API
