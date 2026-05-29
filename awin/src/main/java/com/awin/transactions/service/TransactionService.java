@@ -146,8 +146,10 @@ public class TransactionService {
         payload.put("eventType", eventType);
         payload.put("transactionId", tx.getId().toString());
         payload.put("status", tx.getStatus().name());
-        payload.put("saleAmount", tx.getSaleAmount());
-        payload.put("commissionAmount", tx.getCommissionAmount());
+        // Serialise amounts as plain strings rather than JSON numbers so the original scale
+        // (e.g. 10.00 vs 10) survives consumers that downcast numeric values to Double.
+        payload.put("saleAmount", tx.getSaleAmount().toPlainString());
+        payload.put("commissionAmount", tx.getCommissionAmount().toPlainString());
         payload.put("occurredAt", clock.instant().toString());
         try {
             return objectMapper.writeValueAsString(payload);

@@ -1,60 +1,42 @@
 package com.awin.transactions.outbox;
 
-import java.time.Clock;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Periodically drains unpublished {@link OutboxEvent}s and hands each one to the configured
- * {@link MessagePublisher}.
+ * Periodically drains unpublished {@link OutboxEvent}s and hands each one to
+ * {@link OutboxEventProcessor}.
  *
- * <p>Runs on a fixed delay (default {@code 1s}, override with {@code awin.outbox.poll-interval-ms})
- * inside its own transaction so updates to {@link OutboxEvent#markPublished(java.time.Instant)} are
- * isolated from the domain transaction that produced the event. Failures of the publisher are
- * caught per-event so a single poisoned message cannot block the rest of the batch.
+ * <p>Runs on a fixed delay (default {@code 1s}, override with {@code awin.outbox.poll-interval-ms}).
+ * The poller itself is intentionally non-transactional: it only reads a batch of ids and dispatches
+ * each one to the processor, so the JPA transaction lives only for the per-event publish step and
+ * is never held open across a slow or stuck broker call.
  */
 @Component
 public class OutboxPoller {
 
-    private static final Logger log = LoggerFactory.getLogger(OutboxPoller.class);
     private static final int BATCH_SIZE = 50;
 
     private final OutboxRepository outbox;
-    private final MessagePublisher publisher;
-    private final Clock clock;
+    private final OutboxEventProcessor processor;
 
-    public OutboxPoller(OutboxRepository outbox, MessagePublisher publisher, Clock clock) {
+    public OutboxPoller(OutboxRepository outbox, OutboxEventProcessor processor) {
         this.outbox = outbox;
-        this.publisher = publisher;
-        this.clock = clock;
+        this.processor = processor;
     }
 
     /**
-     * Read one batch of unpublished events in {@code createdAt} order and attempt to publish each.
-     * Invoked by the Spring scheduler; also called directly from tests.
+     * Read one batch of unpublished event ids in {@code createdAt} order and dispatch each to the
+     * processor. Invoked by the Spring scheduler; also called directly from tests.
      */
     @Scheduled(fixedDelayString = "${awin.outbox.poll-interval-ms:1000}")
-    @Transactional
     public void drain() {
-        List<OutboxEvent> batch = outbox.findUnpublished(PageRequest.of(0, BATCH_SIZE));
-        for (OutboxEvent event : batch) {
-            try {
-                publisher.publish(event);
-                event.markPublished(clock.instant());
-            } catch (RuntimeException e) {
-                log.warn(
-                        "Failed to publish outbox event id={} type={} attempts={}: {}",
-                        event.getId(),
-                        event.getType(),
-                        event.getAttempts() + 1,
-                        e.getMessage());
-                event.recordFailure(e.getClass().getSimpleName() + ": " + e.getMessage());
-            }
+        List<UUID> ids = outbox.findUnpublishedIds(PageRequest.of(0, BATCH_SIZE));
+        for (UUID id : ids) {
+            processor.process(id);
         }
     }
 }

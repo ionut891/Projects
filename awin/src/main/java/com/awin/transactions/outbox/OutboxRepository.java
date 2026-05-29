@@ -8,6 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface OutboxRepository extends JpaRepository<OutboxEvent, UUID> {
 
-    @Query("select e from OutboxEvent e where e.publishedAt is null order by e.createdAt asc")
-    List<OutboxEvent> findUnpublished(Pageable pageable);
+    @Query("select e.id from OutboxEvent e where e.publishedAt is null order by e.createdAt asc")
+    List<UUID> findUnpublishedIds(Pageable pageable);
 }
