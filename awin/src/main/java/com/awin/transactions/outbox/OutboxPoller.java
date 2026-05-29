@@ -9,6 +9,15 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Periodically drains unpublished {@link OutboxEvent}s and hands each one to the configured
+ * {@link MessagePublisher}.
+ *
+ * <p>Runs on a fixed delay (default {@code 1s}, override with {@code awin.outbox.poll-interval-ms})
+ * inside its own transaction so updates to {@link OutboxEvent#markPublished(java.time.Instant)} are
+ * isolated from the domain transaction that produced the event. Failures of the publisher are
+ * caught per-event so a single poisoned message cannot block the rest of the batch.
+ */
 @Component
 public class OutboxPoller {
 
@@ -25,6 +34,10 @@ public class OutboxPoller {
         this.clock = clock;
     }
 
+    /**
+     * Read one batch of unpublished events in {@code createdAt} order and attempt to publish each.
+     * Invoked by the Spring scheduler; also called directly from tests.
+     */
     @Scheduled(fixedDelayString = "${awin.outbox.poll-interval-ms:1000}")
     @Transactional
     public void drain() {

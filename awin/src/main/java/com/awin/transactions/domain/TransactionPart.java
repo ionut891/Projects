@@ -10,6 +10,11 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+/**
+ * A constituent line of a {@link Transaction}. A transaction's {@code saleAmount} and
+ * {@code commissionAmount} must equal the sum of the corresponding fields across all of its parts;
+ * this is enforced by the service layer on creation.
+ */
 @Entity
 @Table(name = "transaction_part")
 public class TransactionPart {

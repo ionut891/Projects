@@ -9,6 +9,15 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * A row in the transactional outbox.
+ *
+ * <p>An {@code OutboxEvent} is written in the same JPA transaction as the domain change it
+ * describes, so the event is durable iff the domain change is. {@link OutboxPoller} subsequently
+ * picks up unpublished rows and hands them to a {@link MessagePublisher}; the row is marked
+ * published on success or {@link #recordFailure(String) records a failure} on transient errors so
+ * it is retried.
+ */
 @Entity
 @Table(
         name = "outbox_event",
@@ -52,11 +61,18 @@ public class OutboxEvent {
         this.attempts = 0;
     }
 
+    /**
+     * Mark this event as successfully published at the given instant. Clears any prior error.
+     */
     public void markPublished(Instant when) {
         this.publishedAt = when;
         this.lastError = null;
     }
 
+    /**
+     * Increment the retry counter and record the last publisher error. The row remains unpublished
+     * and will be picked up on the next poll.
+     */
     public void recordFailure(String error) {
         this.attempts += 1;
         this.lastError = truncate(error);

@@ -2,6 +2,11 @@ package com.awin.transactions.domain;
 
 import java.util.UUID;
 
+/**
+ * Thrown when a state transition is requested that the {@link Transaction} state machine forbids
+ * (typically because the transaction is already in a terminal status). Mapped to HTTP {@code 409
+ * Conflict} by the API layer.
+ */
 public class IllegalStateTransitionException extends RuntimeException {
 
     private final UUID transactionId;

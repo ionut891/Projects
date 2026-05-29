@@ -17,6 +17,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Aggregate root for a tracked sale event. A {@code Transaction} is composed of one or more
+ * {@link TransactionPart}s whose amounts must sum to the parent's totals; that invariant is
+ * enforced at construction time by the service layer.
+ *
+ * <p>Status follows the {@link TransactionStatus} state machine. {@link #approve()} and
+ * {@link #decline()} are the only legal mutations and may each be called at most once across the
+ * lifetime of the row.
+ *
+ * <p>Concurrent updates are serialised through the {@link Version JPA optimistic lock} on
+ * {@link #version}: if two transactions race to mutate the same row, the loser fails on flush with
+ * an {@code OptimisticLockingFailureException}.
+ */
 @Entity
 @Table(name = "transaction")
 public class Transaction {
@@ -63,10 +76,22 @@ public class Transaction {
         this.parts.add(part);
     }
 
+    /**
+     * Move the transaction from {@link TransactionStatus#PENDING} to
+     * {@link TransactionStatus#APPROVED}.
+     *
+     * @throws IllegalStateTransitionException if the transaction is already in a terminal status.
+     */
     public void approve() {
         transitionTo(TransactionStatus.APPROVED);
     }
 
+    /**
+     * Move the transaction from {@link TransactionStatus#PENDING} to
+     * {@link TransactionStatus#DECLINED}.
+     *
+     * @throws IllegalStateTransitionException if the transaction is already in a terminal status.
+     */
     public void decline() {
         transitionTo(TransactionStatus.DECLINED);
     }
