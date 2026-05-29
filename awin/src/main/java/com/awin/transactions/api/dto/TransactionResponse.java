@@ -13,11 +13,11 @@ public record TransactionResponse(
         BigDecimal commissionAmount,
         List<Part> parts) {
 
-    public record Part(UUID id, BigDecimal saleAmount, BigDecimal commissionAmount) {}
+    public record Part(UUID id, UUID transactionId, BigDecimal saleAmount, BigDecimal commissionAmount) {}
 
     public static TransactionResponse from(Transaction tx) {
         List<Part> parts = tx.getParts().stream()
-                .map(p -> new Part(p.getId(), p.getSaleAmount(), p.getCommissionAmount()))
+                .map(p -> new Part(p.getId(), tx.getId(), p.getSaleAmount(), p.getCommissionAmount()))
                 .toList();
         return new TransactionResponse(
                 tx.getId(), tx.getStatus(), tx.getSaleAmount(), tx.getCommissionAmount(), parts);
