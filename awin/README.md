@@ -26,6 +26,15 @@ The app listens on `http://localhost:8080`. Useful endpoints:
 ./mvnw test
 ```
 
+## Format / lint
+
+Code style is enforced by [Spotless](https://github.com/diffplug/spotless) with `google-java-format`:
+
+```bash
+./mvnw spotless:apply   # reformat in place
+./mvnw spotless:check   # also runs as part of `mvn verify`
+```
+
 ## API
 
 | Method | Path                          | Description                          |

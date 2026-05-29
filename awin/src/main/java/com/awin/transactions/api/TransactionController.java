@@ -18,60 +18,58 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * REST adapter for the {@link TransactionService}. Maps requests / responses to DTOs and lets the
- * service own all business logic; cross-cutting error mapping is centralised in
- * {@link GlobalExceptionHandler}.
+ * service own all business logic; cross-cutting error mapping is centralised in {@link
+ * GlobalExceptionHandler}.
  */
 @RestController
 @RequestMapping("/transactions")
 public class TransactionController {
 
-    private final TransactionService service;
+  private final TransactionService service;
 
-    public TransactionController(TransactionService service) {
-        this.service = service;
-    }
+  public TransactionController(TransactionService service) {
+    this.service = service;
+  }
 
-    /**
-     * Create a new transaction in {@code PENDING}. Returns {@code 201} with a {@code Location}
-     * header on success or {@code 400} if the amount invariants fail.
-     */
-    @PostMapping
-    public ResponseEntity<TransactionResponse> create(@Valid @RequestBody CreateTransactionRequest request) {
-        Transaction created = service.create(
-                request.saleAmount(),
-                request.commissionAmount(),
-                request.parts().stream()
-                        .map(p -> new PartInput(p.saleAmount(), p.commissionAmount()))
-                        .toList());
-        return ResponseEntity.created(URI.create("/transactions/" + created.getId()))
-                .body(TransactionResponse.from(created));
-    }
+  /**
+   * Create a new transaction in {@code PENDING}. Returns {@code 201} with a {@code Location} header
+   * on success or {@code 400} if the amount invariants fail.
+   */
+  @PostMapping
+  public ResponseEntity<TransactionResponse> create(
+      @Valid @RequestBody CreateTransactionRequest request) {
+    Transaction created =
+        service.create(
+            request.saleAmount(),
+            request.commissionAmount(),
+            request.parts().stream()
+                .map(p -> new PartInput(p.saleAmount(), p.commissionAmount()))
+                .toList());
+    return ResponseEntity.created(URI.create("/transactions/" + created.getId()))
+        .body(TransactionResponse.from(created));
+  }
 
-    /**
-     * Fetch a transaction by id. Returns {@code 404} if it does not exist.
-     */
-    @GetMapping("/{id}")
-    public TransactionResponse get(@PathVariable UUID id) {
-        return TransactionResponse.from(service.get(id));
-    }
+  /** Fetch a transaction by id. Returns {@code 404} if it does not exist. */
+  @GetMapping("/{id}")
+  public TransactionResponse get(@PathVariable UUID id) {
+    return TransactionResponse.from(service.get(id));
+  }
 
-    /**
-     * Approve a pending transaction. Returns {@code 409} if the transaction is already in a
-     * terminal status or if a concurrent request mutated it first; {@code 404} if it does not
-     * exist.
-     */
-    @PostMapping("/{id}/approve")
-    public TransactionResponse approve(@PathVariable UUID id) {
-        return TransactionResponse.from(service.approve(id));
-    }
+  /**
+   * Approve a pending transaction. Returns {@code 409} if the transaction is already in a terminal
+   * status or if a concurrent request mutated it first; {@code 404} if it does not exist.
+   */
+  @PostMapping("/{id}/approve")
+  public TransactionResponse approve(@PathVariable UUID id) {
+    return TransactionResponse.from(service.approve(id));
+  }
 
-    /**
-     * Decline a pending transaction. Returns {@code 409} if the transaction is already in a
-     * terminal status or if a concurrent request mutated it first; {@code 404} if it does not
-     * exist.
-     */
-    @PostMapping("/{id}/decline")
-    public TransactionResponse decline(@PathVariable UUID id) {
-        return TransactionResponse.from(service.decline(id));
-    }
+  /**
+   * Decline a pending transaction. Returns {@code 409} if the transaction is already in a terminal
+   * status or if a concurrent request mutated it first; {@code 404} if it does not exist.
+   */
+  @PostMapping("/{id}/decline")
+  public TransactionResponse decline(@PathVariable UUID id) {
+    return TransactionResponse.from(service.decline(id));
+  }
 }

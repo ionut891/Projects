@@ -20,98 +20,94 @@ import java.util.UUID;
  */
 @Entity
 @Table(
-        name = "outbox_event",
-        indexes = {@Index(name = "ix_outbox_unpublished", columnList = "published_at, created_at")})
+    name = "outbox_event",
+    indexes = {@Index(name = "ix_outbox_unpublished", columnList = "published_at, created_at")})
 public class OutboxEvent {
 
-    @Id
-    @GeneratedValue
-    private UUID id;
+  @Id @GeneratedValue private UUID id;
 
-    @Column(name = "aggregate_id", nullable = false)
-    private UUID aggregateId;
+  @Column(name = "aggregate_id", nullable = false)
+  private UUID aggregateId;
 
-    @Column(name = "type", nullable = false, length = 64)
-    private String type;
+  @Column(name = "type", nullable = false, length = 64)
+  private String type;
 
-    @Column(name = "payload", nullable = false, columnDefinition = "CLOB")
-    private String payload;
+  @Column(name = "payload", nullable = false, columnDefinition = "CLOB")
+  private String payload;
 
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+  @Column(name = "created_at", nullable = false)
+  private Instant createdAt;
 
-    @Column(name = "published_at")
-    private Instant publishedAt;
+  @Column(name = "published_at")
+  private Instant publishedAt;
 
-    @Column(name = "attempts", nullable = false)
-    private int attempts;
+  @Column(name = "attempts", nullable = false)
+  private int attempts;
 
-    @Column(name = "last_error", length = 1000)
-    private String lastError;
+  @Column(name = "last_error", length = 1000)
+  private String lastError;
 
-    protected OutboxEvent() {
-        // for JPA
-    }
+  protected OutboxEvent() {
+    // for JPA
+  }
 
-    public OutboxEvent(UUID aggregateId, String type, String payload, Instant createdAt) {
-        this.aggregateId = aggregateId;
-        this.type = type;
-        this.payload = payload;
-        this.createdAt = createdAt;
-        this.attempts = 0;
-    }
+  public OutboxEvent(UUID aggregateId, String type, String payload, Instant createdAt) {
+    this.aggregateId = aggregateId;
+    this.type = type;
+    this.payload = payload;
+    this.createdAt = createdAt;
+    this.attempts = 0;
+  }
 
-    /**
-     * Mark this event as successfully published at the given instant. Clears any prior error.
-     */
-    public void markPublished(Instant when) {
-        this.publishedAt = when;
-        this.lastError = null;
-    }
+  /** Mark this event as successfully published at the given instant. Clears any prior error. */
+  public void markPublished(Instant when) {
+    this.publishedAt = when;
+    this.lastError = null;
+  }
 
-    /**
-     * Increment the retry counter and record the last publisher error. The row remains unpublished
-     * and will be picked up on the next poll.
-     */
-    public void recordFailure(String error) {
-        this.attempts += 1;
-        this.lastError = truncate(error);
-    }
+  /**
+   * Increment the retry counter and record the last publisher error. The row remains unpublished
+   * and will be picked up on the next poll.
+   */
+  public void recordFailure(String error) {
+    this.attempts += 1;
+    this.lastError = truncate(error);
+  }
 
-    private static String truncate(String s) {
-        if (s == null) return null;
-        return s.length() > 1000 ? s.substring(0, 1000) : s;
-    }
+  private static String truncate(String s) {
+    if (s == null) return null;
+    return s.length() > 1000 ? s.substring(0, 1000) : s;
+  }
 
-    public UUID getId() {
-        return id;
-    }
+  public UUID getId() {
+    return id;
+  }
 
-    public UUID getAggregateId() {
-        return aggregateId;
-    }
+  public UUID getAggregateId() {
+    return aggregateId;
+  }
 
-    public String getType() {
-        return type;
-    }
+  public String getType() {
+    return type;
+  }
 
-    public String getPayload() {
-        return payload;
-    }
+  public String getPayload() {
+    return payload;
+  }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
 
-    public Instant getPublishedAt() {
-        return publishedAt;
-    }
+  public Instant getPublishedAt() {
+    return publishedAt;
+  }
 
-    public int getAttempts() {
-        return attempts;
-    }
+  public int getAttempts() {
+    return attempts;
+  }
 
-    public String getLastError() {
-        return lastError;
-    }
+  public String getLastError() {
+    return lastError;
+  }
 }

@@ -7,7 +7,7 @@ import java.util.UUID;
  * {@code 404}.
  */
 public class TransactionNotFoundException extends RuntimeException {
-    public TransactionNotFoundException(UUID id) {
-        super("Transaction not found: " + id);
-    }
+  public TransactionNotFoundException(UUID id) {
+    super("Transaction not found: " + id);
+  }
 }

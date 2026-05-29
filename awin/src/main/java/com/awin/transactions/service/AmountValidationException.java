@@ -5,7 +5,7 @@ package com.awin.transactions.service;
  * amounts, commission greater than sale, or empty parts list). Mapped to HTTP {@code 400}.
  */
 public class AmountValidationException extends RuntimeException {
-    public AmountValidationException(String message) {
-        super(message);
-    }
+  public AmountValidationException(String message) {
+    super(message);
+  }
 }

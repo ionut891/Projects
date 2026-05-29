@@ -25,69 +25,70 @@ import org.springframework.context.annotation.Primary;
 @SpringBootTest(properties = "awin.outbox.poll-interval-ms=3600000")
 class TransactionServiceConcurrencyTest {
 
-    @TestConfiguration
-    static class TestPublisherConfig {
-        @Bean
-        @Primary
-        MessagePublisher recordingMessagePublisher() {
-            return new RecordingMessagePublisher();
-        }
+  @TestConfiguration
+  static class TestPublisherConfig {
+    @Bean
+    @Primary
+    MessagePublisher recordingMessagePublisher() {
+      return new RecordingMessagePublisher();
+    }
+  }
+
+  @Autowired TransactionService service;
+
+  @Autowired OutboxRepository outboxRepository;
+
+  @Test
+  void onlyOneOfTwoConcurrentApprovesSucceeds() throws Exception {
+    Transaction tx =
+        service.create(
+            new BigDecimal("100.00"),
+            new BigDecimal("10.00"),
+            List.of(new PartInput(new BigDecimal("100.00"), new BigDecimal("10.00"))));
+    UUID id = tx.getId();
+    long outboxBefore = outboxRepository.count();
+
+    int threads = 2;
+    CountDownLatch ready = new CountDownLatch(threads);
+    CountDownLatch start = new CountDownLatch(1);
+    AtomicInteger successes = new AtomicInteger();
+    AtomicInteger conflicts = new AtomicInteger();
+
+    ExecutorService pool = Executors.newFixedThreadPool(threads);
+    try {
+      for (int i = 0; i < threads; i++) {
+        pool.submit(
+            () -> {
+              ready.countDown();
+              try {
+                start.await();
+                service.approve(id);
+                successes.incrementAndGet();
+              } catch (ConcurrentTransactionUpdateException
+                  | com.awin.transactions.domain.IllegalStateTransitionException e) {
+                conflicts.incrementAndGet();
+              } catch (Exception e) {
+                // Surface as failure
+                throw new RuntimeException(e);
+              }
+              return null;
+            });
+      }
+      ready.await(5, TimeUnit.SECONDS);
+      start.countDown();
+      pool.shutdown();
+      assertThat(pool.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+    } finally {
+      pool.shutdownNow();
     }
 
-    @Autowired
-    TransactionService service;
+    assertThat(successes.get()).isEqualTo(1);
+    assertThat(conflicts.get()).isEqualTo(1);
 
-    @Autowired
-    OutboxRepository outboxRepository;
+    Transaction reloaded = service.get(id);
+    assertThat(reloaded.getStatus()).isEqualTo(TransactionStatus.APPROVED);
 
-    @Test
-    void onlyOneOfTwoConcurrentApprovesSucceeds() throws Exception {
-        Transaction tx = service.create(
-                new BigDecimal("100.00"),
-                new BigDecimal("10.00"),
-                List.of(new PartInput(new BigDecimal("100.00"), new BigDecimal("10.00"))));
-        UUID id = tx.getId();
-        long outboxBefore = outboxRepository.count();
-
-        int threads = 2;
-        CountDownLatch ready = new CountDownLatch(threads);
-        CountDownLatch start = new CountDownLatch(1);
-        AtomicInteger successes = new AtomicInteger();
-        AtomicInteger conflicts = new AtomicInteger();
-
-        ExecutorService pool = Executors.newFixedThreadPool(threads);
-        try {
-            for (int i = 0; i < threads; i++) {
-                pool.submit(() -> {
-                    ready.countDown();
-                    try {
-                        start.await();
-                        service.approve(id);
-                        successes.incrementAndGet();
-                    } catch (ConcurrentTransactionUpdateException | com.awin.transactions.domain.IllegalStateTransitionException e) {
-                        conflicts.incrementAndGet();
-                    } catch (Exception e) {
-                        // Surface as failure
-                        throw new RuntimeException(e);
-                    }
-                    return null;
-                });
-            }
-            ready.await(5, TimeUnit.SECONDS);
-            start.countDown();
-            pool.shutdown();
-            assertThat(pool.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
-        } finally {
-            pool.shutdownNow();
-        }
-
-        assertThat(successes.get()).isEqualTo(1);
-        assertThat(conflicts.get()).isEqualTo(1);
-
-        Transaction reloaded = service.get(id);
-        assertThat(reloaded.getStatus()).isEqualTo(TransactionStatus.APPROVED);
-
-        long outboxAfter = outboxRepository.count();
-        assertThat(outboxAfter - outboxBefore).isEqualTo(1L);
-    }
+    long outboxAfter = outboxRepository.count();
+    assertThat(outboxAfter - outboxBefore).isEqualTo(1L);
+  }
 }

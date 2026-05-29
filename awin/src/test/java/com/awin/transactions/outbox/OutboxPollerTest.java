@@ -18,59 +18,57 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class OutboxPollerTest {
 
-    @TestConfiguration
-    static class TestPublisherConfig {
-        @Bean
-        @Primary
-        MessagePublisher recordingMessagePublisher() {
-            return new RecordingMessagePublisher();
-        }
+  @TestConfiguration
+  static class TestPublisherConfig {
+    @Bean
+    @Primary
+    MessagePublisher recordingMessagePublisher() {
+      return new RecordingMessagePublisher();
     }
+  }
 
-    @Autowired
-    OutboxRepository repository;
+  @Autowired OutboxRepository repository;
 
-    @Autowired
-    OutboxPoller poller;
+  @Autowired OutboxPoller poller;
 
-    @Autowired
-    MessagePublisher publisher;
+  @Autowired MessagePublisher publisher;
 
-    @Autowired
-    Clock clock;
+  @Autowired Clock clock;
 
-    private RecordingMessagePublisher recording;
+  private RecordingMessagePublisher recording;
 
-    @BeforeEach
-    void setUp() {
-        recording = (RecordingMessagePublisher) publisher;
-        recording.clearFailure();
-    }
+  @BeforeEach
+  void setUp() {
+    recording = (RecordingMessagePublisher) publisher;
+    recording.clearFailure();
+  }
 
-    @Test
-    void publishesUnpublishedEventsAndMarksThem() {
-        OutboxEvent event = repository.save(new OutboxEvent(
-                UUID.randomUUID(), "TransactionApproved", "{}", clock.instant()));
+  @Test
+  void publishesUnpublishedEventsAndMarksThem() {
+    OutboxEvent event =
+        repository.save(
+            new OutboxEvent(UUID.randomUUID(), "TransactionApproved", "{}", clock.instant()));
 
-        poller.drain();
+    poller.drain();
 
-        assertThat(recording.publishedIds()).contains(event.getId());
-        OutboxEvent reloaded = repository.findById(event.getId()).orElseThrow();
-        assertThat(reloaded.getPublishedAt()).isNotNull();
-        assertThat(reloaded.getAttempts()).isZero();
-    }
+    assertThat(recording.publishedIds()).contains(event.getId());
+    OutboxEvent reloaded = repository.findById(event.getId()).orElseThrow();
+    assertThat(reloaded.getPublishedAt()).isNotNull();
+    assertThat(reloaded.getAttempts()).isZero();
+  }
 
-    @Test
-    void leavesEventUnpublishedAndIncrementsAttemptsOnFailure() {
-        OutboxEvent event = repository.save(new OutboxEvent(
-                UUID.randomUUID(), "TransactionApproved", "{}", clock.instant()));
-        recording.failNext(new RuntimeException("broker down"));
+  @Test
+  void leavesEventUnpublishedAndIncrementsAttemptsOnFailure() {
+    OutboxEvent event =
+        repository.save(
+            new OutboxEvent(UUID.randomUUID(), "TransactionApproved", "{}", clock.instant()));
+    recording.failNext(new RuntimeException("broker down"));
 
-        poller.drain();
+    poller.drain();
 
-        OutboxEvent reloaded = repository.findById(event.getId()).orElseThrow();
-        assertThat(reloaded.getPublishedAt()).isNull();
-        assertThat(reloaded.getAttempts()).isEqualTo(1);
-        assertThat(reloaded.getLastError()).contains("broker down");
-    }
+    OutboxEvent reloaded = repository.findById(event.getId()).orElseThrow();
+    assertThat(reloaded.getPublishedAt()).isNull();
+    assertThat(reloaded.getAttempts()).isEqualTo(1);
+    assertThat(reloaded.getLastError()).contains("broker down");
+  }
 }

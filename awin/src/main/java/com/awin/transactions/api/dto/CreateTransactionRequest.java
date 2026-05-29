@@ -7,6 +7,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record CreateTransactionRequest(
-        @NotNull BigDecimal saleAmount,
-        @NotNull BigDecimal commissionAmount,
-        @NotEmpty @Valid List<PartPayload> parts) {}
+    @NotNull BigDecimal saleAmount,
+    @NotNull BigDecimal commissionAmount,
+    @NotEmpty @Valid List<PartPayload> parts) {}

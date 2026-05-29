@@ -19,41 +19,42 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(TransactionNotFoundException.class)
-    public ProblemDetail handleNotFound(TransactionNotFoundException ex) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
-    }
+  @ExceptionHandler(TransactionNotFoundException.class)
+  public ProblemDetail handleNotFound(TransactionNotFoundException ex) {
+    return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+  }
 
-    @ExceptionHandler(AmountValidationException.class)
-    public ProblemDetail handleAmountValidation(AmountValidationException ex) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
+  @ExceptionHandler(AmountValidationException.class)
+  public ProblemDetail handleAmountValidation(AmountValidationException ex) {
+    return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+  }
 
-    @ExceptionHandler(IllegalStateTransitionException.class)
-    public ProblemDetail handleIllegalTransition(IllegalStateTransitionException ex) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
-        pd.setProperty("transactionId", ex.getTransactionId());
-        pd.setProperty("currentStatus", ex.getFrom());
-        pd.setProperty("requestedStatus", ex.getTo());
-        return pd;
-    }
+  @ExceptionHandler(IllegalStateTransitionException.class)
+  public ProblemDetail handleIllegalTransition(IllegalStateTransitionException ex) {
+    ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    pd.setProperty("transactionId", ex.getTransactionId());
+    pd.setProperty("currentStatus", ex.getFrom());
+    pd.setProperty("requestedStatus", ex.getTo());
+    return pd;
+  }
 
-    @ExceptionHandler(ConcurrentTransactionUpdateException.class)
-    public ProblemDetail handleConcurrent(ConcurrentTransactionUpdateException ex) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
-    }
+  @ExceptionHandler(ConcurrentTransactionUpdateException.class)
+  public ProblemDetail handleConcurrent(ConcurrentTransactionUpdateException ex) {
+    return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+  }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleBeanValidation(MethodArgumentNotValidException ex) {
-        String detail = ex.getBindingResult().getFieldErrors().stream()
-                .map(e -> e.getField() + ": " + e.getDefaultMessage())
-                .collect(Collectors.joining("; "));
-        return ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST, detail.isEmpty() ? "Validation failed" : detail);
-    }
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ProblemDetail handleBeanValidation(MethodArgumentNotValidException ex) {
+    String detail =
+        ex.getBindingResult().getFieldErrors().stream()
+            .map(e -> e.getField() + ": " + e.getDefaultMessage())
+            .collect(Collectors.joining("; "));
+    return ProblemDetail.forStatusAndDetail(
+        HttpStatus.BAD_REQUEST, detail.isEmpty() ? "Validation failed" : detail);
+  }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ProblemDetail handleUnreadable(HttpMessageNotReadableException ex) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Malformed request body");
-    }
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ProblemDetail handleUnreadable(HttpMessageNotReadableException ex) {
+    return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Malformed request body");
+  }
 }

@@ -8,7 +8,7 @@ import java.util.UUID;
  * re-read state and decide whether to retry.
  */
 public class ConcurrentTransactionUpdateException extends RuntimeException {
-    public ConcurrentTransactionUpdateException(UUID id) {
-        super("Transaction " + id + " was modified concurrently");
-    }
+  public ConcurrentTransactionUpdateException(UUID id) {
+    super("Transaction " + id + " was modified concurrently");
+  }
 }

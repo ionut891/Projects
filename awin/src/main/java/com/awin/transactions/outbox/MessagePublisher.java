@@ -7,10 +7,10 @@ package com.awin.transactions.outbox;
  *
  * <p>The contract is at-least-once: implementations should not assume an event is delivered only
  * once, and downstream consumers must dedupe on {@link OutboxEvent#getId()}. Implementations should
- * throw a {@code RuntimeException} on a transient failure so the poller increments
- * {@link OutboxEvent#getAttempts() attempts} and retries on the next tick.
+ * throw a {@code RuntimeException} on a transient failure so the poller increments {@link
+ * OutboxEvent#getAttempts() attempts} and retries on the next tick.
  */
 public interface MessagePublisher {
 
-    void publish(OutboxEvent event);
+  void publish(OutboxEvent event);
 }

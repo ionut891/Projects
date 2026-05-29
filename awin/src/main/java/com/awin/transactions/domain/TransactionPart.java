@@ -11,54 +11,52 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
- * A constituent line of a {@link Transaction}. A transaction's {@code saleAmount} and
- * {@code commissionAmount} must equal the sum of the corresponding fields across all of its parts;
- * this is enforced by the service layer on creation.
+ * A constituent line of a {@link Transaction}. A transaction's {@code saleAmount} and {@code
+ * commissionAmount} must equal the sum of the corresponding fields across all of its parts; this is
+ * enforced by the service layer on creation.
  */
 @Entity
 @Table(name = "transaction_part")
 public class TransactionPart {
 
-    @Id
-    @GeneratedValue
-    private UUID id;
+  @Id @GeneratedValue private UUID id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "transaction_id", nullable = false)
-    private Transaction transaction;
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "transaction_id", nullable = false)
+  private Transaction transaction;
 
-    @Column(name = "sale_amount", nullable = false, precision = 19, scale = 2)
-    private BigDecimal saleAmount;
+  @Column(name = "sale_amount", nullable = false, precision = 19, scale = 2)
+  private BigDecimal saleAmount;
 
-    @Column(name = "commission_amount", nullable = false, precision = 19, scale = 2)
-    private BigDecimal commissionAmount;
+  @Column(name = "commission_amount", nullable = false, precision = 19, scale = 2)
+  private BigDecimal commissionAmount;
 
-    protected TransactionPart() {
-        // for JPA
-    }
+  protected TransactionPart() {
+    // for JPA
+  }
 
-    public TransactionPart(BigDecimal saleAmount, BigDecimal commissionAmount) {
-        this.saleAmount = saleAmount;
-        this.commissionAmount = commissionAmount;
-    }
+  public TransactionPart(BigDecimal saleAmount, BigDecimal commissionAmount) {
+    this.saleAmount = saleAmount;
+    this.commissionAmount = commissionAmount;
+  }
 
-    public UUID getId() {
-        return id;
-    }
+  public UUID getId() {
+    return id;
+  }
 
-    public Transaction getTransaction() {
-        return transaction;
-    }
+  public Transaction getTransaction() {
+    return transaction;
+  }
 
-    void setTransaction(Transaction transaction) {
-        this.transaction = transaction;
-    }
+  void setTransaction(Transaction transaction) {
+    this.transaction = transaction;
+  }
 
-    public BigDecimal getSaleAmount() {
-        return saleAmount;
-    }
+  public BigDecimal getSaleAmount() {
+    return saleAmount;
+  }
 
-    public BigDecimal getCommissionAmount() {
-        return commissionAmount;
-    }
+  public BigDecimal getCommissionAmount() {
+    return commissionAmount;
+  }
 }

@@ -25,23 +25,21 @@ import org.springframework.test.web.servlet.MvcResult;
 @AutoConfigureMockMvc
 class TransactionControllerTest {
 
-    @TestConfiguration
-    static class TestPublisherConfig {
-        @Bean
-        @Primary
-        MessagePublisher recordingMessagePublisher() {
-            return new RecordingMessagePublisher();
-        }
+  @TestConfiguration
+  static class TestPublisherConfig {
+    @Bean
+    @Primary
+    MessagePublisher recordingMessagePublisher() {
+      return new RecordingMessagePublisher();
     }
+  }
 
-    @Autowired
-    MockMvc mvc;
+  @Autowired MockMvc mvc;
 
-    @Autowired
-    ObjectMapper objectMapper;
+  @Autowired ObjectMapper objectMapper;
 
-    private static final String VALID_CREATE =
-            """
+  private static final String VALID_CREATE =
+      """
             {
               "saleAmount": "100.00",
               "commissionAmount": "10.00",
@@ -52,120 +50,122 @@ class TransactionControllerTest {
             }
             """;
 
-    @Test
-    void createThenApprove() throws Exception {
-        MvcResult result = mvc.perform(post("/transactions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(VALID_CREATE))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value("PENDING"))
-                .andExpect(jsonPath("$.parts.length()").value(2))
-                .andReturn();
+  @Test
+  void createThenApprove() throws Exception {
+    MvcResult result =
+        mvc.perform(
+                post("/transactions").contentType(MediaType.APPLICATION_JSON).content(VALID_CREATE))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.status").value("PENDING"))
+            .andExpect(jsonPath("$.parts.length()").value(2))
+            .andReturn();
 
-        String id = extractId(result.getResponse().getContentAsString());
+    String id = extractId(result.getResponse().getContentAsString());
 
-        mvc.perform(post("/transactions/" + id + "/approve"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("APPROVED"));
+    mvc.perform(post("/transactions/" + id + "/approve"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("APPROVED"));
 
-        mvc.perform(get("/transactions/" + id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("APPROVED"));
-    }
+    mvc.perform(get("/transactions/" + id))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("APPROVED"));
+  }
 
-    @Test
-    void declinePendingTransaction() throws Exception {
-        MvcResult result = mvc.perform(post("/transactions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(VALID_CREATE))
-                .andExpect(status().isCreated())
-                .andReturn();
-        String id = extractId(result.getResponse().getContentAsString());
+  @Test
+  void declinePendingTransaction() throws Exception {
+    MvcResult result =
+        mvc.perform(
+                post("/transactions").contentType(MediaType.APPLICATION_JSON).content(VALID_CREATE))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String id = extractId(result.getResponse().getContentAsString());
 
-        mvc.perform(post("/transactions/" + id + "/decline"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("DECLINED"));
-    }
+    mvc.perform(post("/transactions/" + id + "/decline"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("DECLINED"));
+  }
 
-    @Test
-    void approveTwiceReturnsConflict() throws Exception {
-        MvcResult result = mvc.perform(post("/transactions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(VALID_CREATE))
-                .andReturn();
-        String id = extractId(result.getResponse().getContentAsString());
+  @Test
+  void approveTwiceReturnsConflict() throws Exception {
+    MvcResult result =
+        mvc.perform(
+                post("/transactions").contentType(MediaType.APPLICATION_JSON).content(VALID_CREATE))
+            .andReturn();
+    String id = extractId(result.getResponse().getContentAsString());
 
-        mvc.perform(post("/transactions/" + id + "/approve")).andExpect(status().isOk());
-        mvc.perform(post("/transactions/" + id + "/approve"))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.currentStatus").value("APPROVED"));
-    }
+    mvc.perform(post("/transactions/" + id + "/approve")).andExpect(status().isOk());
+    mvc.perform(post("/transactions/" + id + "/approve"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.currentStatus").value("APPROVED"));
+  }
 
-    @Test
-    void declineAfterApproveReturnsConflict() throws Exception {
-        MvcResult result = mvc.perform(post("/transactions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(VALID_CREATE))
-                .andReturn();
-        String id = extractId(result.getResponse().getContentAsString());
+  @Test
+  void declineAfterApproveReturnsConflict() throws Exception {
+    MvcResult result =
+        mvc.perform(
+                post("/transactions").contentType(MediaType.APPLICATION_JSON).content(VALID_CREATE))
+            .andReturn();
+    String id = extractId(result.getResponse().getContentAsString());
 
-        mvc.perform(post("/transactions/" + id + "/approve")).andExpect(status().isOk());
-        mvc.perform(post("/transactions/" + id + "/decline"))
-                .andExpect(status().isConflict());
-    }
+    mvc.perform(post("/transactions/" + id + "/approve")).andExpect(status().isOk());
+    mvc.perform(post("/transactions/" + id + "/decline")).andExpect(status().isConflict());
+  }
 
-    @Test
-    void rejectsMismatchedSums() throws Exception {
-        String body =
-                """
+  @Test
+  void rejectsMismatchedSums() throws Exception {
+    String body =
+        """
                 {
                   "saleAmount":"100.00",
                   "commissionAmount":"10.00",
                   "parts":[{"saleAmount":"50.00","commissionAmount":"6.00"}]
                 }
                 """;
-        mvc.perform(post("/transactions").contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail",
-                        equalTo("Sum of part saleAmounts (50.00) does not equal transaction saleAmount (100.00)")));
-    }
+    mvc.perform(post("/transactions").contentType(MediaType.APPLICATION_JSON).content(body))
+        .andExpect(status().isBadRequest())
+        .andExpect(
+            jsonPath(
+                "$.detail",
+                equalTo(
+                    "Sum of part saleAmounts (50.00) does not equal transaction saleAmount (100.00)")));
+  }
 
-    @Test
-    void rejectsEmptyParts() throws Exception {
-        String body =
-                """
+  @Test
+  void rejectsEmptyParts() throws Exception {
+    String body =
+        """
                 {
                   "saleAmount":"100.00",
                   "commissionAmount":"10.00",
                   "parts":[]
                 }
                 """;
-        mvc.perform(post("/transactions").contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isBadRequest());
-    }
+    mvc.perform(post("/transactions").contentType(MediaType.APPLICATION_JSON).content(body))
+        .andExpect(status().isBadRequest());
+  }
 
-    @Test
-    void rejectsCommissionGreaterThanSale() throws Exception {
-        String body =
-                """
+  @Test
+  void rejectsCommissionGreaterThanSale() throws Exception {
+    String body =
+        """
                 {
                   "saleAmount":"100.00",
                   "commissionAmount":"200.00",
                   "parts":[{"saleAmount":"100.00","commissionAmount":"200.00"}]
                 }
                 """;
-        mvc.perform(post("/transactions").contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isBadRequest());
-    }
+    mvc.perform(post("/transactions").contentType(MediaType.APPLICATION_JSON).content(body))
+        .andExpect(status().isBadRequest());
+  }
 
-    @Test
-    void approveUnknownIdReturns404() throws Exception {
-        mvc.perform(post("/transactions/00000000-0000-0000-0000-000000000000/approve"))
-                .andExpect(status().isNotFound());
-    }
+  @Test
+  void approveUnknownIdReturns404() throws Exception {
+    mvc.perform(post("/transactions/00000000-0000-0000-0000-000000000000/approve"))
+        .andExpect(status().isNotFound());
+  }
 
-    private String extractId(String body) throws Exception {
-        JsonNode node = objectMapper.readTree(body);
-        return node.get("id").asText();
-    }
+  private String extractId(String body) throws Exception {
+    JsonNode node = objectMapper.readTree(body);
+    return node.get("id").asText();
+  }
 }
